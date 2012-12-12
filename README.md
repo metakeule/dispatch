@@ -37,7 +37,7 @@ example
 			fmt.Printf("unhandled content %#v\n", o)
 		}
 
-		// here the functions that are used for the different types
+		// here are the functions that are used for the different types
 		// they have to cast to the type they use, but they don't
 		// need to check for errors, since the casting will always work
 		strFn := func(o interface{}) {
