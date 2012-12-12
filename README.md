@@ -23,7 +23,7 @@ example
 	func main() {
 
 		// register once the types that we want to use in dispatchers
-		// by passing an instance to dispatch.AddType()
+		// by passing an instance to dispatch.Register()
 		dispatch.Register("")
 		dispatch.Register(I(0))
 		dispatch.Register(3)
