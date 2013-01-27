@@ -158,7 +158,7 @@ func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
 			}
 		}
 		if !didHandle {
-			return NotHandled{o, tt}
+			return NotHandled{in, tt}
 		}
 	}
 	return m(in, out)
