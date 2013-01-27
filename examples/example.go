@@ -51,9 +51,9 @@ func main() {
 	d.SetHandler("I", iHandler)
 
 	// let the fun begin!
-	d.Dispatch("my string")       // my string is a string
-	d.Dispatch(I(3))              // 3 is a I
-	p(d.HasType("float64"))       // false
-	fmt.Println(d.Dispatch(34.0)) // Error: type float64 is not registered, use AddType()
-	d.Dispatch(34)                // fallback for 34
+	d.Dispatch("my string", "")       // my string is a string
+	d.Dispatch(I(3), "")              // 3 is a I
+	p(d.HasType("float64"))           // false
+	fmt.Println(d.Dispatch(34.0, "")) // Error: type float64 is not registered, use AddType()
+	d.Dispatch(34, "")                // fallback for 34
 }

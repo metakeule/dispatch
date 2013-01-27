@@ -136,7 +136,7 @@ Dispatch() returns an error if one of the following conditions are met:
 	- a fallback function returned an error. the error is passed through
 */
 func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
-	tt := reflect.TypeOf(in).Name()
+	tt := reflect.TypeOf(in).String()
 	m, err := ø.GetHandler(tt)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
 
 func (ø *Dispatcher) AddType(i interface{}) {
 	t := reflect.TypeOf(i)
-	ø.registry[t.Name()] = &DispatcherType{t}
+	ø.registry[t.String()] = &DispatcherType{t}
 }
 
 func (ø *Dispatcher) RemoveType(name string) { delete(ø.registry, name) }
