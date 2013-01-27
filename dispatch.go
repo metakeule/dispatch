@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-type TypeHandler func(o interface{}) error
-type Fallback func(o interface{}) (handled bool, err error)
+type TypeHandler func(in interface{}, out interface{}) error
+type Fallback func(in interface{}, out interface{}) (handled bool, err error)
 
 type NotInRegistry struct{ t string }
 type NoFallback struct{ t string }
@@ -67,7 +67,7 @@ A fallback functions is expected to return a boolean to indicate, if it did hand
 
 A the fallback returns false, the next (LIFO) fallback function will be called from Dispatch() (see there).
 */
-func (ø *Dispatcher) AddFallback(f func(interface{}) (bool, error)) {
+func (ø *Dispatcher) AddFallback(f func(interface{}, interface{}) (bool, error)) {
 	ø.fallbacks = append(ø.fallbacks, Fallback(f))
 }
 
@@ -85,7 +85,7 @@ You may also get the handler with GetHandler()
 
 If the type is unknown for the registry, an error is returned
 */
-func (ø *Dispatcher) SetHandler(ty string, f func(interface{}) error) (err error) {
+func (ø *Dispatcher) SetHandler(ty string, f func(interface{}, interface{}) error) (err error) {
 	real, err := ø.GetType(ty)
 	if err != nil {
 		return
@@ -135,8 +135,8 @@ Dispatch() returns an error if one of the following conditions are met:
 	  no fallback function that could/did handle the value. fix it with SetHandler() or AddFallback()
 	- a fallback function returned an error. the error is passed through
 */
-func (ø *Dispatcher) Dispatch(o interface{}) error {
-	tt := reflect.TypeOf(o).Name()
+func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
+	tt := reflect.TypeOf(in).Name()
 	m, err := ø.GetHandler(tt)
 	if err != nil {
 		return err
@@ -149,7 +149,7 @@ func (ø *Dispatcher) Dispatch(o interface{}) error {
 		didHandle := false
 		lenfb := len(ø.fallbacks)
 		for i := lenfb - 1; i > -1; i-- {
-			didHandle, e := ø.fallbacks[i](o)
+			didHandle, e := ø.fallbacks[i](in, out)
 			if e != nil {
 				return e
 			}
@@ -161,7 +161,7 @@ func (ø *Dispatcher) Dispatch(o interface{}) error {
 			return NotHandled{o, tt}
 		}
 	}
-	return m(o)
+	return m(in, out)
 }
 
 func (ø *Dispatcher) AddType(i interface{}) {

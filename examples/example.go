@@ -23,9 +23,9 @@ func main() {
 	d.AddType(3)
 
 	// we may have fallback functions for unhandled types
-	fallback := func(o interface{}) (didHandle bool, err error) {
+	fallback := func(in interface{}, out interface{}) (didHandle bool, err error) {
 		didHandle = true
-		fmt.Printf("fallback for %#v\n", o)
+		fmt.Printf("fallback for %#v\n", in)
 		return
 	}
 
@@ -35,16 +35,16 @@ func main() {
 	// they have to cast to the type they serve, but they don't
 	// need to check for type casting of the interface.
 	// they should however return an error for other situations
-	strHandler := func(i interface{}) (err error) {
-		fmt.Printf("%s is a string\n", i.(string))
+	strHandler := func(in interface{}, out interface{}) (err error) {
+		fmt.Printf("%s is a string\n", in.(string))
 		return
 	}
 
 	// returns an error if the string type is not registered with AddType()
 	d.SetHandler("string", strHandler)
 
-	iHandler := func(i interface{}) (err error) {
-		fmt.Printf("%d is a I\n", i.(I))
+	iHandler := func(in interface{}, out interface{}) (err error) {
+		fmt.Printf("%d is a I\n", in.(I))
 		return
 	}
 
