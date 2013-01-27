@@ -61,7 +61,7 @@ func TestDispatch(t *testing.T) {
 	d.AddType(known(0))
 	d.AddFallback(fallback)
 
-	d.AddHandler("string", handleString)
+	d.SetHandler("string", handleString)
 
 	d.Dispatch("hello world")
 

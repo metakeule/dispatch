@@ -41,14 +41,14 @@ func main() {
 	}
 
 	// returns an error if the string type is not registered with AddType()
-	d.AddHandler("string", strHandler)
+	d.SetHandler("string", strHandler)
 
 	iHandler := func(i interface{}) (err error) {
 		fmt.Printf("%d is a I\n", i.(I))
 		return
 	}
 
-	d.AddHandler("I", iHandler)
+	d.SetHandler("I", iHandler)
 
 	// let the fun begin!
 	d.Dispatch("my string")       // my string is a string

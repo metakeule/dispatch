@@ -59,12 +59,13 @@ func (ø *Dispatcher) ImportType(types ...DispatcherType) {
 }
 
 /*
-	Register a function as fallback.
+Add a function as fallback.
 
-	a fallback function is called, if no type handler could be
-	found for a certain type. it is expected to return a boolean true if it
-  	did handle the given value and/or an error if some error occured
-	if it returns false, the next (LIFO) fallback function will be called when dispatching a value (see Dispatch())
+A fallback function is called by Dispatch(), if no type handler could be found for a certain type of the given value.
+
+A fallback functions is expected to return a boolean to indicate, if it did handle the given value and/or an error if some error occured.
+
+A the fallback returns false, the next (LIFO) fallback function will be called from Dispatch() (see there).
 */
 func (ø *Dispatcher) AddFallback(f func(interface{}) (bool, error)) {
 	ø.fallbacks = append(ø.fallbacks, Fallback(f))
@@ -73,12 +74,18 @@ func (ø *Dispatcher) AddFallback(f func(interface{}) (bool, error)) {
 // removes all fallback functions
 func (ø *Dispatcher) RemoveFallbacks() { ø.fallbacks = []Fallback{} }
 
-// Register a handler for a specific type
-// Only one handler may be specified for a certain type.
-// You may check if a handler already exists with HasHandler()
-// You may also get the handler with GetHandler()
-// If the type is unknown for the registry, an error is returned
-func (ø *Dispatcher) AddHandler(ty string, f func(interface{}) error) (err error) {
+/*
+Set the handler for a specific type
+
+Only one handler may be specified for a certain type.
+
+You may check if a handler already exists with HasHandler()
+
+You may also get the handler with GetHandler()
+
+If the type is unknown for the registry, an error is returned
+*/
+func (ø *Dispatcher) SetHandler(ty string, f func(interface{}) error) (err error) {
 	real, err := ø.GetType(ty)
 	if err != nil {
 		return
@@ -115,17 +122,18 @@ func (ø *Dispatcher) RemoveHandler(ty string) (err error) {
 }
 
 /*
-	Dispatch() takes any value, looks if it can find a handler function to handle its type and calls that handler with the value.
-	If there is no specific handler for the type of value, the fallback functions are called in the reverse order of their registration (LIFO) until one of them
-	either returns an error or a boolean with true that means, that the function did handle the value.
+Dispatch() takes any value, looks if it can find a handler function to handle its type and calls that handler with the value.
 
-	Dispatch() returns an error if one of the following conditions are met:
+If there is no specific handler for the type of value, the fallback functions are called in the reverse order of their registration (LIFO) until one of them
+either returns an error or a boolean with true that means, that the function did handle the value.
 
-		- the type of the value is not in the registry. fix it with AddType()
-		- the handler function returns an error. the error is passed through
-		- there is no handler function for the type of the value and there also is
-		  no fallback function that could/did handle the value
-		- a fallback function returned an error. the error is passed through
+Dispatch() returns an error if one of the following conditions are met:
+
+	- the type of the value is not in the registry. fix it with AddType()
+	- the handler function returns an error. the error is passed through
+	- there is no handler function for the type of the value and there also is
+	  no fallback function that could/did handle the value. fix it with SetHandler() or AddFallback()
+	- a fallback function returned an error. the error is passed through
 */
 func (ø *Dispatcher) Dispatch(o interface{}) error {
 	tt := reflect.TypeOf(o).Name()

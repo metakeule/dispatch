@@ -5,11 +5,12 @@
 /*
 Package dispatch provides an flexible way to structure dispatching based on types.
 
-Advantages over using a type-switch:
-- fallback methods for unhandled types
-- add and remove types from the outside
-- add, remove and overwrite type handling functions from the outside
-- add fallback functions from the outside
+Advantages over using a type switch:
+
+	- fallback methods for unhandled types
+	- add and remove types from the outside
+	- add, remove and overwrite type handling functions from the outside
+	- add fallback functions from the outside
 
 Example
 
@@ -48,7 +49,7 @@ Using dispatch you have more flexibility:
 	func NewMyStruct() *MyStruct {
 		ø := &MyStruct{dispatcher.New()}
 		ø.AddType(0)
-		ø.AddHandler("int", doIntStuff)
+		ø.SetHandler("int", doIntStuff)
 		ø.AddFallback(fallback)
 	}
 
@@ -92,8 +93,8 @@ Now if MyStruct is used, new types, handlers and fallbacks can be added. No need
 	func main() {
 		my := NewMyStruct()
 		my.AddType(Special(0))
-		my.AddHandler("Special",specialHandler)
-		my.AddHandler("int", myStringHandler)
+		my.SetHandler("Special",specialHandler)
+		my.SetHandler("int", myStringHandler)
 		my.DoStuff(2)
 		my.DoStuff(Special(2))
 	}
@@ -111,5 +112,4 @@ simply wrap the call to Dispatch() into another function that handles the error.
 when calling the Dispatch() where you have more information about the value, you pass to Dispatch and where you can make
 better decisions about what to do best.
 */
-
 package dispatch
