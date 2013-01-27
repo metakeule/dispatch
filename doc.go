@@ -14,7 +14,7 @@ Advantages over using a type switch:
 
 Example
 
-Let's say you would have a struct with a method that have a type switch
+Let's say you have a struct with a method that uses a type switch
 
 	type MyStruct {}
 
