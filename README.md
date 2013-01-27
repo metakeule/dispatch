@@ -3,7 +3,7 @@ dispatch
 
 [![Build Status](https://secure.travis-ci.org/metakeule/dispatch.png)](http://travis-ci.org/metakeule/dispatch)
 
-a lightweight method dispatcher for go
+a lightweight dispatcher for go
 
 
 example
