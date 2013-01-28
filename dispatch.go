@@ -6,36 +6,34 @@ import (
 )
 
 type TypeHandler func(in interface{}, out interface{}) error
-type Fallback func(in interface{}, out interface{}) (handled bool, err error)
 
-type NoFallback struct{ t string }
-type NotHandled struct {
-	v interface{}
-	t string
-}
 type Dispatcher struct {
 	handlers  map[string]TypeHandler
-	fallbacks []Fallback
+	Fallbacks []func(in interface{}, out interface{}) (didHandle bool, err error)
 }
 
-func (ø NoFallback) Error() string { return fmt.Sprintf("Error: no fallback function, type %s", ø.t) }
+type NotHandled struct {
+	Value interface{}
+	Type  string
+}
+
 func (ø NotHandled) Error() string {
-	return fmt.Sprintf("Error: not handled value %#v type %s", ø.v, ø.t)
+	return fmt.Sprintf("not handled: value %#v type %s", ø.Value, ø.Type)
 }
 
-func New() (ø *Dispatcher) { return &Dispatcher{map[string]TypeHandler{}, []Fallback{}} }
+func New() (ø *Dispatcher) {
+	return &Dispatcher{
+		handlers:  map[string]TypeHandler{},
+		Fallbacks: []func(in interface{}, out interface{}) (didHandle bool, err error){}}
+}
 
 /*
-Add a function as fallback.
-
-A fallback function is called by Dispatch(), if no type handler could be found for a certain type of the given value.
-
-A fallback functions is expected to return a boolean to indicate, if it did handle the given value and/or an error if some error occured.
-
-A the fallback returns false, the next (LIFO) fallback function will be called from Dispatch() (see there).
+	A fallback function is called by Dispatch(), if no type handler could be found for a certain type of the given value.
+	A fallback functions is expected to return a boolean to indicate, if it did handle the given value and/or an error if some error occured.
+	A the fallback returns false, the next (LIFO) fallback function will be called from Dispatch() (see there).
 */
-func (ø *Dispatcher) AddFallback(f func(interface{}, interface{}) (bool, error)) {
-	ø.fallbacks = append(ø.fallbacks, Fallback(f))
+func (ø *Dispatcher) AddFallback(fb func(in interface{}, out interface{}) (didHandle bool, err error)) {
+	ø.Fallbacks = append(ø.Fallbacks, fb)
 }
 
 /*
@@ -54,7 +52,6 @@ func (ø *Dispatcher) SetHandler(i interface{}, f func(interface{}, interface{})
 }
 
 // removes all fallback functions
-func (ø *Dispatcher) RemoveFallbacks()                               { ø.fallbacks = []Fallback{} }
 func (ø *Dispatcher) HasHandler(i interface{}) bool                  { return ø.handlers[ø.Type(i)] != nil }
 func (ø *Dispatcher) GetHandler(i interface{}) (handler TypeHandler) { return ø.handlers[ø.Type(i)] }
 func (ø *Dispatcher) RemoveHandler(i interface{})                    { delete(ø.handlers, ø.Type(i)) }
@@ -68,7 +65,6 @@ either returns an error or a boolean with true that means, that the function did
 
 Dispatch() returns an error if one of the following conditions are met:
 
-	- the type of the value is not in the registry. fix it with AddType()
 	- the handler function returns an error. the error is passed through
 	- there is no handler function for the type of the value and there also is
 	  no fallback function that could/did handle the value. fix it with SetHandler() or AddFallback()
@@ -79,13 +75,10 @@ func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
 	m := ø.handlers[tt]
 
 	if m == nil {
-		if len(ø.fallbacks) == 0 {
-			return NoFallback{tt}
-		}
 		didHandle := false
-		lenfb := len(ø.fallbacks)
+		lenfb := len(ø.Fallbacks)
 		for i := lenfb - 1; i > -1; i-- {
-			didHandle, e := ø.fallbacks[i](in, out)
+			didHandle, e := ø.Fallbacks[i](in, out)
 			if e != nil {
 				return e
 			}
