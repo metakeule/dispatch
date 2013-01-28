@@ -8,10 +8,6 @@ func err(t *testing.T, msg string, is interface{}, shouldbe interface{}) {
 	t.Errorf(msg+": is %s, should be %s\n", is, shouldbe)
 }
 
-func init() {
-	d.AddType("")
-}
-
 type known int
 type notRegistered int
 
@@ -30,52 +26,16 @@ func handleString(in interface{}, out interface{}) error {
 	return nil
 }
 
-func TestRegister(t *testing.T) {
-	if d.HasType("xyz") {
-		err(t, "HasType with unknown type", true, false)
-	}
-
-	if !d.HasType("string") {
-		err(t, "HasType with known type", false, true)
-	}
-
-	d.AddType(known(0))
-	d.RemoveType("known")
-
-	if d.HasType("known") {
-		err(t, "RemoveType with known type", false, true)
-	}
-}
-
-func TestGetType(t *testing.T) {
-	if _, e := d.GetType("xyz"); e == nil {
-		err(t, "GetType with error", true, false)
-	}
-
-	if _, e := d.GetType("string"); e != nil {
-		err(t, "GetType without error", true, false)
-	}
-}
-
 func TestDispatch(t *testing.T) {
-	d.AddType(known(0))
 	d.AddFallback(fallback)
-
-	d.SetHandler("string", handleString)
-
+	d.SetHandler("", handleString)
 	d.Dispatch("hello world", "")
 
 	if lastString != "hello world" {
 		err(t, "Dispatch string", lastString, "hello world")
 	}
 
-	lastError := d.Dispatch(notRegistered(0), "")
-
-	if lastError == nil {
-		err(t, "Dispatch error with notRegistered", false, true)
-	}
-
-	lastError = d.Dispatch(known(1), "")
+	lastError := d.Dispatch(known(1), "")
 
 	if lastError != nil {
 		err(t, "Dispatch error with known", true, false)
@@ -104,7 +64,6 @@ func TestFallbacks(t *testing.T) {
 	}
 
 	disp := New()
-	disp.AddType("")
 	disp.AddFallback(fb3)
 	disp.AddFallback(fb2)
 	disp.AddFallback(fb1)

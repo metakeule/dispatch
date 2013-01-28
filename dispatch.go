@@ -8,55 +8,22 @@ import (
 type TypeHandler func(in interface{}, out interface{}) error
 type Fallback func(in interface{}, out interface{}) (handled bool, err error)
 
-type NotInRegistry struct{ t string }
 type NoFallback struct{ t string }
 type NotHandled struct {
 	v interface{}
 	t string
 }
-type DispatcherType struct{ reflect.Type }
 type Dispatcher struct {
-	handlers  map[*DispatcherType]TypeHandler
+	handlers  map[string]TypeHandler
 	fallbacks []Fallback
-	registry  map[string]*DispatcherType
 }
 
-func (ø *DispatcherType) String() string { return ø.Name() }
-
-func (ø NotInRegistry) Error() string {
-	return fmt.Sprintf("Error: type %s is not registered, use AddType()", ø.t)
-}
-
-func (ø NoFallback) Error() string {
-	return fmt.Sprintf("Error: type %s has no handler and we have no fallback function, use AddFallback()", ø.t)
-}
-
+func (ø NoFallback) Error() string { return fmt.Sprintf("Error: no fallback function, type %s", ø.t) }
 func (ø NotHandled) Error() string {
-	return fmt.Sprintf("Error: value %#v type %s has no handler and no fallback function did handle it, use AddFallback()", ø.v, ø.t)
+	return fmt.Sprintf("Error: not handled value %#v type %s", ø.v, ø.t)
 }
 
-func New() (ø *Dispatcher) {
-	ø = &Dispatcher{
-		handlers:  map[*DispatcherType]TypeHandler{},
-		fallbacks: []Fallback{},
-		registry:  map[string]*DispatcherType{}}
-
-	return
-}
-
-// import reflect types for reuse
-func (ø *Dispatcher) ImportReflectType(types ...reflect.Type) {
-	for _, t := range types {
-		ø.registry[t.Name()] = &DispatcherType{t}
-	}
-}
-
-// import types for reuse
-func (ø *Dispatcher) ImportType(types ...DispatcherType) {
-	for _, t := range types {
-		ø.AddType(t)
-	}
-}
+func New() (ø *Dispatcher) { return &Dispatcher{map[string]TypeHandler{}, []Fallback{}} }
 
 /*
 Add a function as fallback.
@@ -71,9 +38,6 @@ func (ø *Dispatcher) AddFallback(f func(interface{}, interface{}) (bool, error)
 	ø.fallbacks = append(ø.fallbacks, Fallback(f))
 }
 
-// removes all fallback functions
-func (ø *Dispatcher) RemoveFallbacks() { ø.fallbacks = []Fallback{} }
-
 /*
 Set the handler for a specific type
 
@@ -85,49 +49,16 @@ You may also get the handler with GetHandler()
 
 If the type is unknown for the registry, an error is returned
 */
-func (ø *Dispatcher) SetHandler(ty string, f func(interface{}, interface{}) error) (err error) {
-	real, err := ø.GetType(ty)
-	if err != nil {
-		return
-	}
-	ø.handlers[real] = TypeHandler(f)
-	return
+func (ø *Dispatcher) SetHandler(i interface{}, f func(interface{}, interface{}) error) {
+	ø.handlers[ø.Type(i)] = TypeHandler(f)
 }
 
-func (ø *Dispatcher) HasHandler(ty string) (has bool, err error) {
-	real, err := ø.GetType(ty)
-	if err != nil {
-		return
-	}
-	has = ø.handlers[real] != nil
-	return
-}
-
-func (ø *Dispatcher) HasHandlerForInstance(i interface{}) bool {
-	t := reflect.TypeOf(i)
-	if ø.registry[t.String()] == nil {
-		return false
-	}
-	return ø.handlers[ø.registry[t.String()]] != nil
-}
-
-func (ø *Dispatcher) GetHandler(ty string) (handler TypeHandler, err error) {
-	real, err := ø.GetType(ty)
-	if err != nil {
-		return
-	}
-	handler = ø.handlers[real]
-	return
-}
-
-func (ø *Dispatcher) RemoveHandler(ty string) (err error) {
-	real, err := ø.GetType(ty)
-	if err != nil {
-		return
-	}
-	delete(ø.handlers, real)
-	return
-}
+// removes all fallback functions
+func (ø *Dispatcher) RemoveFallbacks()                               { ø.fallbacks = []Fallback{} }
+func (ø *Dispatcher) HasHandler(i interface{}) bool                  { return ø.handlers[ø.Type(i)] != nil }
+func (ø *Dispatcher) GetHandler(i interface{}) (handler TypeHandler) { return ø.handlers[ø.Type(i)] }
+func (ø *Dispatcher) RemoveHandler(i interface{})                    { delete(ø.handlers, ø.Type(i)) }
+func (ø *Dispatcher) Type(i interface{}) string                      { return reflect.TypeOf(i).String() }
 
 /*
 Dispatch() takes any value, looks if it can find a handler function to handle its type and calls that handler with the value.
@@ -144,11 +75,8 @@ Dispatch() returns an error if one of the following conditions are met:
 	- a fallback function returned an error. the error is passed through
 */
 func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
-	tt := reflect.TypeOf(in).String()
-	m, err := ø.GetHandler(tt)
-	if err != nil {
-		return err
-	}
+	tt := ø.Type(in)
+	m := ø.handlers[tt]
 
 	if m == nil {
 		if len(ø.fallbacks) == 0 {
@@ -170,42 +98,4 @@ func (ø *Dispatcher) Dispatch(in interface{}, out interface{}) error {
 		}
 	}
 	return m(in, out)
-}
-
-func (ø *Dispatcher) AddType(i interface{}) {
-	t := reflect.TypeOf(i)
-	ø.registry[t.String()] = &DispatcherType{t}
-}
-
-func (ø *Dispatcher) RemoveType(name string) { delete(ø.registry, name) }
-
-func (ø *Dispatcher) GetType(name string) (t *DispatcherType, err error) {
-	t = ø.registry[name]
-	if t == nil {
-		err = NotInRegistry{name}
-	}
-	return
-}
-
-func (ø *Dispatcher) HasType(name string) bool {
-	if ø.registry[name] == nil {
-		return false
-	}
-	return true
-}
-
-func (ø *Dispatcher) Types() (ts []string) {
-	ts = []string{}
-	for k, _ := range ø.registry {
-		ts = append(ts, k)
-	}
-	return
-}
-
-func (ø *Dispatcher) HasTypeForInstance(i interface{}) bool {
-	t := reflect.TypeOf(i)
-	if ø.registry[t.String()] == nil {
-		return false
-	}
-	return true
 }
