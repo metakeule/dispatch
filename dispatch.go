@@ -186,6 +186,14 @@ func (ø *Dispatcher) HasType(name string) bool {
 	return true
 }
 
+func (ø *Dispatcher) Types() (ts []string) {
+	ts = []string{}
+	for k, _ := range ø.registry {
+		ts = append(ts, k)
+	}
+	return
+}
+
 func (ø *Dispatcher) HasTypeForInstance(i interface{}) bool {
 	t := reflect.TypeOf(i)
 	if ø.registry[t.String()] == nil {
