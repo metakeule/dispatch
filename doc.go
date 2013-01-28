@@ -53,20 +53,20 @@ Using dispatch you have more flexibility:
 		ø.AddFallback(fallback)
 	}
 
-	func (ø *MyStruct) DoStuff(i interface{}) (err error) {
+	func (ø *MyStruct) DoStuff(i interface{}, out interface{}) (err error) {
 		fmt.Printf("before dispatching: %v", i)
-		err = ø.Dispatch(i)
+		err = ø.Dispatch(i,"")
 		return
 	}
 
-	func doIntStuff(value interface{}) (err error)
+	func doIntStuff(value interface{}, out interface{}) (err error)
 		// you have to typecast, but you can be sure the  type cast will work
 		i := value.(int)
 		fmt.Printf("is an int: %v\n", i)
 		return
 	}
 
-	func fallback(value interface{}) (didHandle bool, err error){
+	func fallback(value interface{}, out interface{}) (didHandle bool, err error){
 		didHandle = true // return didHandle = true if the fallback did handle the value
 		fmt.Printf("in the fallback: %v\n", value)
 		return
@@ -77,14 +77,14 @@ Now if MyStruct is used, new types, handlers and fallbacks can be added. No need
 
 	type Special int
 
-	func specialHandler(value interface{}) (didHandle bool, err error) {
+	func specialHandler(value interface{}, out interface{}) (didHandle bool, err error) {
 		s := value.(Special) // no need for error handling
 		fmt.Printf("is a special int: %v\n", s)
 		return
 	}
 
 	// overwrite int handling
-	func myIntHandler(value interface{}) (didHandle bool, err error) {
+	func myIntHandler(value interface{}, out interface{}) (didHandle bool, err error) {
 		i := value.(int)
 		fmt.Printf("is an int in the overwritten handler:: %v\n", i)
 		return

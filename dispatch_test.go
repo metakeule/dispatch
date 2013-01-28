@@ -19,14 +19,14 @@ var lastUnhandledContent interface{} = nil
 var lastString = ""
 var d = New()
 
-func fallback(o interface{}) (didHandle bool, err error) {
+func fallback(in interface{}, out interface{}) (didHandle bool, err error) {
 	didHandle = true
-	lastUnhandledContent = o
+	lastUnhandledContent = in
 	return
 }
 
-func handleString(ø interface{}) error {
-	lastString = ø.(string)
+func handleString(in interface{}, out interface{}) error {
+	lastString = in.(string)
 	return nil
 }
 
@@ -63,19 +63,19 @@ func TestDispatch(t *testing.T) {
 
 	d.SetHandler("string", handleString)
 
-	d.Dispatch("hello world")
+	d.Dispatch("hello world", "")
 
 	if lastString != "hello world" {
 		err(t, "Dispatch string", lastString, "hello world")
 	}
 
-	lastError := d.Dispatch(notRegistered(0))
+	lastError := d.Dispatch(notRegistered(0), "")
 
 	if lastError == nil {
 		err(t, "Dispatch error with notRegistered", false, true)
 	}
 
-	lastError = d.Dispatch(known(1))
+	lastError = d.Dispatch(known(1), "")
 
 	if lastError != nil {
 		err(t, "Dispatch error with known", true, false)
@@ -88,17 +88,17 @@ func TestDispatch(t *testing.T) {
 
 func TestFallbacks(t *testing.T) {
 	res := []string{}
-	fb1 := func(val interface{}) (didHandle bool, err error) {
-		res = append(res, "fb1"+val.(string))
+	fb1 := func(in interface{}, out interface{}) (didHandle bool, err error) {
+		res = append(res, "fb1"+in.(string))
 		return
 	}
-	fb2 := func(val interface{}) (didHandle bool, err error) {
-		res = append(res, "fb2"+val.(string))
+	fb2 := func(in interface{}, out interface{}) (didHandle bool, err error) {
+		res = append(res, "fb2"+in.(string))
 		didHandle = true
 		return
 	}
-	fb3 := func(val interface{}) (didHandle bool, err error) {
-		res = append(res, "fb3"+val.(string))
+	fb3 := func(in interface{}, out interface{}) (didHandle bool, err error) {
+		res = append(res, "fb3"+in.(string))
 		didHandle = true
 		return
 	}
@@ -109,7 +109,7 @@ func TestFallbacks(t *testing.T) {
 	disp.AddFallback(fb2)
 	disp.AddFallback(fb1)
 
-	disp.Dispatch("hiho")
+	disp.Dispatch("hiho", "")
 
 	if res[0] != "fb1hiho" {
 		err(t, "Fallback order 0", res[0], "fb1hiho")
