@@ -103,6 +103,14 @@ func (ø *Dispatcher) HasHandler(ty string) (has bool, err error) {
 	return
 }
 
+func (ø *Dispatcher) HasHandlerForInstance(i interface{}) bool {
+	t := reflect.TypeOf(i)
+	if ø.registry[t.String()] == nil {
+		return false
+	}
+	return ø.handlers[ø.registry[t.String()]] != nil
+}
+
 func (ø *Dispatcher) GetHandler(ty string) (handler TypeHandler, err error) {
 	real, err := ø.GetType(ty)
 	if err != nil {
