@@ -1,6 +1,7 @@
 package dispatch
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -24,6 +25,11 @@ func fallback(in interface{}, out interface{}) (didHandle bool, err error) {
 func handleString(in interface{}, out interface{}) error {
 	lastString = in.(string)
 	return nil
+}
+
+func returnError(in interface{}, out interface{}) (didHandle bool, err error) {
+	err = fmt.Errorf("test error")
+	return
 }
 
 func TestDispatch(t *testing.T) {
@@ -80,5 +86,47 @@ func TestFallbacks(t *testing.T) {
 
 	if len(res) > 2 {
 		err(t, "Fallback order 2", res[2], "")
+	}
+}
+
+func TestHasHandler(t *testing.T) {
+	d1 := New()
+	d1.SetHandler("", handleString)
+
+	if !d1.HasHandler("") {
+		err(t, "HasHandler", false, true)
+	}
+
+	if h := d1.GetHandler(""); h == nil {
+		err(t, "HasHandler", h, handleString)
+	}
+
+	d1.RemoveHandler("")
+
+	if d1.HasHandler("") {
+		err(t, "RemoveHandler", true, false)
+	}
+
+}
+
+func TestNoHandler(t *testing.T) {
+	d1 := New()
+	out := ""
+	e := d1.Dispatch("", &out)
+	if e == nil {
+		err(t, "no handler error", false, true)
+	}
+
+	if e.Error() == "" {
+		err(t, "no error message", false, true)
+	}
+}
+
+func TestFallbackErr(t *testing.T) {
+	d1 := New()
+	d1.AddFallback(returnError)
+	out := ""
+	if e := d1.Dispatch("", &out); e == nil {
+		err(t, "error of handler", false, true)
 	}
 }
